@@ -18,7 +18,7 @@ class KoneTest(unittest.TestCase):
         temp_name = random_str[:10]
         index.to_json(temp_name)
 
-        loaded_index = IntIndex.read_json(temp_name)
+        loaded_index = IntIndex.from_json(temp_name)
         os.remove(temp_name)
         loaded_char = loaded_index.from_int(indexed_int)
 

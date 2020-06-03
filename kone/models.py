@@ -1,5 +1,9 @@
-import collections
 import json
+import numpy as np
+import matplotlib.pyplot as plt
+from collections.abc import Iterable, Sequence
+from sklearn.model_selection import train_test_split
+from tensorflow.python.keras.models import load_model
 
 
 class PredictorABC:
@@ -28,32 +32,127 @@ class Kone(PredictorABC):
     def __init__(self, window_size: int):
         super().__init__()
         self._window_size = window_size
+        self._vocab_index = None
+        self._model = None
+        self._train_history = None
 
-    def train(self, *args, **kwargs):
+    def train(self, x: Sequence, y: Sequence,
+              epochs=30, batch_size=1 << 14,
+              embedding_dim=300, num_neurons=128,
+              optimizer='rmsprop', verbose=1) -> None:
+
+        flat_x, _ = self._flatten_text(text_list=x)
+        matrix_x = self._to_numeric_matrix(flat_x)
+        flat_y, _ = self._flatten_text(text_list=y)
+        x_train, x_test, y_train, y_test = train_test_split(matrix_x, flat_y)
+
+        self._build_model(embedding_dim=embedding_dim,
+                          num_neurons=num_neurons)
+        self._model.compile(optimizer=optimizer,
+                            loss='categorical_crossentropy',
+                            metrics=['categorical_accuracy'])
+        self._train_history = self._model.fit(x_train, y_train,
+                                              batch_size=batch_size,
+                                              validation_data=[x_test, y_test],
+                                              epochs=epochs,
+                                              verbose=verbose)
+
+    def predict(self, text_list: Iterable) -> list:
+        if not self._model:
+            raise ReferenceError("Please train or load a model.")
+
+        char_list, text_lengths = self._flatten_text(text_list)
+        windowed_and_numericized = self._to_numeric_matrix(char_list)
+
+        y_hat_matrix = self._model.predict(windowed_and_numericized)
+        y_hat = np.argmax(y_hat_matrix, axis=1)
+        noun_list = self._extract_nouns(predictions=y_hat,
+                                        text_lengths=text_lengths)
+
+        return noun_list
+
+    def save_model(self,
+                   index_name="index.json",
+                   weight_name="weights.h5"):
+        self._vocab_index.to_json(file_name=index_name)
+        self._model.save(weight_name)
+
+    def load_index(self, index_path):
+        self._vocab_index = IntIndex.from_json(index_path)
+
+    def load_weights(self, model_path):
+        self._model = load_model(model_path)
+
+    def load_model(self, index_path, model_path):
+        """ Method to retain consistency with API syntax. """
+        self.load_index(index_path=index_path)
+        self.load_weights(model_path=model_path)
+
+    def _flatten_text(self, text_list: Iterable) -> (list, list):
         raise NotImplementedError
 
-    def predict(self, *args, **kwargs):
+    def _build_model(self, embedding_dim=300, num_neurons=128):
         raise NotImplementedError
 
-    def save_model(self, *args, **kwargs):
+    def _to_numeric_matrix(self, char_list: list) -> np.ndarray:
         raise NotImplementedError
 
-    def load_model(self, *args, **kwargs):
+    @staticmethod
+    def _extract_nouns(predictions, text_lengths) -> list:
         raise NotImplementedError
+
+    @property
+    def train_history(self):
+        return self._train_history
+
+    def plot_train_history(self, save_name: str):
+        for metric in ('loss', 'categorical_accuracy'):
+            val_metric = 'val_' + metric
+            plt.plot(self._train_history[metric], label=metric)
+            plt.plot(self._train_history[val_metric], label=val_metric)
+
+            if 'accuracy' in metric:
+                metric = 'accuracy'
+
+            plt.title(f'{metric} over epochs')
+            plt.ylabel(metric)
+            plt.xlabel('Epochs')
+            plt.legend(loc="upper right")
+            plt.savefig(f"{save_name}_{metric}.png")
+            plt.clf()
 
 
 class IntIndex:
     """
-    Preserves mapping of characters to integers.
+    Creates & preserves mapping of characters to integers.
+    Can be created from an iterable that holds the vocabulary items,
+    or from a json file that already contains the mappings.
     """
-    def __init__(self, vocabulary=(), json_obj=None):
+    def __init__(self, vocabulary=None, json_obj=None):
+        """
+        Initialize the index from an iterable of vocabulary or a json file.
+
+        Parameters
+        ----------
+        vocabulary: Iterable
+                    An iterable of items you want to map to integers.
+                    If you wanted to index characters to integers, this vocabulary
+                    would be a list of characters -- a string.
+
+        json_obj: dict
+                  If you wish to load the index from a previously saved index,
+                  pass a dictionary into this parameter.
+        """
         if json_obj:
             self._to_int = json_obj
             self._from_int = {value: key for key, value in
                               self._to_int.items()}
 
         else:
-            if not isinstance(vocabulary, collections.abc.Iterable):
+            if not vocabulary:
+                raise KeyError("You must load a json file or a vocabulary.")
+
+            if not isinstance(vocabulary, Iterable):
                 raise TypeError("Expected vocabulary to be an iterable,"
                                 "but got type {}".format(type(vocabulary)))
 
@@ -108,7 +207,7 @@ class IntIndex:
             json.dump(self._to_int, f)
 
     @classmethod
-    def read_json(cls, file_name: str):
+    def from_json(cls, file_name: str):
         with open(file_name, 'r', encoding='utf-8') as f:
             json_obj = json.load(f)
         return cls(json_obj=json_obj)
