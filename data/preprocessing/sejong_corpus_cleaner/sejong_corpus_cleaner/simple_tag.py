@@ -18,7 +18,7 @@ default_tagmap = {
  'MAJ': 'Adverb',
  'MM': 'Determiner',
  'NA': 'Unk',
- 'NNB': 'Noun',
+ #'NNB': 'Noun',
  'NNG': 'Noun',
  'NNP': 'Noun',
  'NP': 'Pronoun',
@@ -38,9 +38,9 @@ default_tagmap = {
  'VV': 'Verb',
  'VX': 'Verb', # 해왔다 -> 하/VX+아/EC+오/VX+았/EP+다/EF
  'XPN': 'Determiner', # 과/XPN+부가, 폐/XPN+휴지
- 'XR': 'Noun', # 강렬, 간편, 비슷 # XR + XSV/XSA 는 동/형용사가 됨
+ #'XR': 'Noun', # 강렬, 간편, 비슷 # XR + XSV/XSA 는 동/형용사가 됨
  'XSA': 'Adjective', # 같, 답, 되, 하
- 'XSN': 'Noun', # 반영구+적/XSN, 대만+산/XSN # XSN 처럼 명사 뒤에 suffix 역할을 함
+ #'XSN': 'Noun', # 반영구+적/XSN, 대만+산/XSN # XSN 처럼 명사 뒤에 suffix 역할을 함
  'XSV': 'Verb' # 당하, 시키
  }
 

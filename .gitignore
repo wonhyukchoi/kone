@@ -1,6 +1,9 @@
 # Pycharm
 .idea/
 
+# data
+data/preprocessing/sejong_corpus_cleaner/data/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -1,20 +1,26 @@
 import unittest
-from .data_maker import CorpusCleaner
+from data_maker import CorpusCleaner
 
 
 class DataMakerTest(unittest.TestCase):
 
-    def test_num_columns(self):
+    def setUp(self) -> None:
+        self._x = "text"
+        self._y = "tag"
         corpus_cleaner = CorpusCleaner()
         corpus_cleaner.generate()
-        data = corpus_cleaner.data
-        self.assertTrue(data['x'] == data['y'])
+        self._data = corpus_cleaner.data
+
+    def tearDown(self) -> None:
+        self._data = None
+
+    def test_num_columns(self):
+        data = self._data
+        self.assertTrue(len(data[self._x]) == len(data[self._y]))
 
     def test_row_lens(self):
-        corpus_cleaner = CorpusCleaner()
-        corpus_cleaner.generate()
-        data = corpus_cleaner.data
-        for x_row, y_row in zip(data[['x', 'y']].values):
+        data = self._data
+        for x_row, y_row in data[[self._x, self._y]].values:
             self.assertEqual(len(x_row), len(y_row))
 
 
