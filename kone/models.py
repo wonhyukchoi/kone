@@ -3,7 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from collections.abc import Iterable, Sequence
 from sklearn.model_selection import train_test_split
-from tensorflow.python.keras.models import load_model
+from sklearn.preprocessing import OneHotEncoder
+from tensorflow.python.keras.models import load_model, Model
+from tensorflow.python.keras.layers import Input, Embedding, Flatten, Dense
 
 
 class PredictorABC:
@@ -105,7 +107,7 @@ class Kone(PredictorABC):
                      padding_symbol='<p>') -> dict:
         flat_x, text_lengths, matrix_list = "", [], []
         padding = padding_symbol * self._window_size
-        pad_len = len(padding) * 2
+        seq_len = len(padding) * 2 + 1
 
         for text in text_list:
             flat_x += text
@@ -116,18 +118,34 @@ class Kone(PredictorABC):
 
             numericized_padded = []
             for i in range(len(text)):
-                numericized_padded += padded_as_num[i: i + pad_len]
+                numericized_padded += padded_as_num[i: i + seq_len]
             matrix_list.append(numericized_padded)
 
         matrix = np.array(matrix_list)
         return dict(flat_x=flat_x, text_lengths=text_lengths,
                     matrix=matrix)
 
-    def _transform_y(self, pos_list: Iterable) -> np.array:
-        raise NotImplementedError
+    # TODO: test this works
+    @staticmethod
+    def _transform_y(flat_y: str) -> np.array:
+        one_hot = OneHotEncoder()
+        return one_hot.fit_transform(list(flat_y))
 
-    def _build_model(self, embedding_dim=300, num_neurons=128):
-        raise NotImplementedError
+    def _build_model(self, embedding_dim=64, num_neurons=64) -> None:
+        seq_len = self._window_size * 2 + 1
+        vocab_size = len(self._x_index.vocabulary) + 1
+        num_pos_tags = len(self._y_index)
+
+        input_layer = Input(shape=(seq_len,))
+        embedding_layer = Embedding(input_dim=vocab_size,
+                                    output_dim=embedding_dim,
+                                    input_length=seq_len)(input_layer)
+        flatten_layer = Flatten()(embedding_layer)
+        dense_layer = Dense(units=num_neurons,
+                            activation='relu')(flatten_layer)
+        predict_layer = Dense(units=num_pos_tags,
+                              activation='softmax')(dense_layer)
+        self._model = Model(input=input_layer, outputs=predict_layer)
 
     @staticmethod
     def _extract_nouns(char_list: list, predictions: np.ndarray,
@@ -181,6 +199,7 @@ class IntIndex:
             self._to_int = json_obj
             self._from_int = {value: key for key, value in
                               self._to_int.items()}
+            self._vocabulary = set(self._to_int.keys())
 
         else:
             if not vocabulary:
@@ -251,3 +270,7 @@ class IntIndex:
         with open(file_name, 'r', encoding='utf-8') as f:
             json_obj = json.load(f)
         return cls(json_obj=json_obj)
+
+    @property
+    def vocabulary(self):
+        return self._vocabulary
