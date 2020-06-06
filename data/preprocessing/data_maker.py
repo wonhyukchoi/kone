@@ -1,3 +1,4 @@
+import os
 import math
 import logging
 import pandas as pd
@@ -54,20 +55,23 @@ class CorpusCleaner:
             x_list.append(x)
             y_list.append(y)
 
-        # FIXME
+        # TODO: probably better way
         data = {}
         for column, data_column in zip(self._data.columns, (x_list, y_list)):
             data[column] = data_column
         self._data = pd.DataFrame(data)
 
-    def save(self, out_name="train_data.csv", dump_protocol=75000):
+    def save(self, out_name="train_data.csv",
+             path=os.getcwd(),
+             dump_protocol=75000):
+
         num_dumps = math.ceil(len(self._data)/dump_protocol)
         data = self._data.dropna()
-        print("Dropped {} rows".format(len(self._data) - len(data)))
         for i in range(num_dumps):
             prefix = 'iter_' + str(i) + '_'
+            file_name = os.path.join(path, prefix + out_name)
             index = i * dump_protocol
-            data[index: index+dump_protocol].to_csv(prefix+out_name,
+            data[index: index+dump_protocol].to_csv(file_name,
                                                     encoding='utf-8-sig')
 
     @property
@@ -78,4 +82,5 @@ class CorpusCleaner:
 if __name__ == "__main__":
     corpus_cleaner = CorpusCleaner()
     corpus_cleaner.generate()
-    corpus_cleaner.save("data.csv")
+    save_path = os.path.join(os.getcwd(), 'processed')
+    corpus_cleaner.save("data.csv", path=save_path)
