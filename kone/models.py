@@ -12,6 +12,7 @@ class PredictorABC:
     All prediction modules must follow this syntax,
     and should (ideally) implement all methods.
     """
+
     def __init__(self, *args, **kwargs):
         pass
 
@@ -32,19 +33,27 @@ class Kone(PredictorABC):
     def __init__(self, window_size: int):
         super().__init__()
         self._window_size = window_size
-        self._vocab_index = None
+        self._x_index = None
+        self._y_index = None
         self._model = None
         self._train_history = None
 
     def train(self, x: Sequence, y: Sequence,
+              padding_symbol='<p>',
               epochs=30, batch_size=1 << 14,
               embedding_dim=300, num_neurons=128,
               optimizer='rmsprop', verbose=1) -> None:
 
-        flat_x, _ = self._flatten_text(text_list=x)
-        matrix_x = self._to_numeric_matrix(flat_x)
-        flat_y, _ = self._flatten_text(text_list=y)
-        x_train, x_test, y_train, y_test = train_test_split(matrix_x, flat_y)
+        flat_x, flat_y = "".join(x), "".join(y)
+        self._x_index = IntIndex(vocabulary=flat_x)
+        self._x_index.add_vocab(padding_symbol)
+        self._y_index = IntIndex(vocabulary=flat_y)
+
+        flat_x_dict = self._transform_x(text_list=x, padding_symbol=padding_symbol)
+        matrix_x = flat_x_dict['matrix']
+        matrix_y = self._transform_y(flat_y)
+
+        x_train, x_test, y_train, y_test = train_test_split(matrix_x, matrix_y)
 
         self._build_model(embedding_dim=embedding_dim,
                           num_neurons=num_neurons)
@@ -61,12 +70,15 @@ class Kone(PredictorABC):
         if not self._model:
             raise ReferenceError("Please train or load a model.")
 
-        char_list, text_lengths = self._flatten_text(text_list)
-        windowed_and_numericized = self._to_numeric_matrix(char_list)
+        x_dict = self._transform_x(text_list)
+        flat_x_chars = x_dict['flat_x']
+        text_lengths = x_dict['text_lengths']
+        windowed_and_numericized = x_dict['matrix']
 
         y_hat_matrix = self._model.predict(windowed_and_numericized)
         y_hat = np.argmax(y_hat_matrix, axis=1)
-        noun_list = self._extract_nouns(predictions=y_hat,
+        noun_list = self._extract_nouns(char_list=flat_x_chars,
+                                        predictions=y_hat,
                                         text_lengths=text_lengths)
 
         return noun_list
@@ -74,11 +86,11 @@ class Kone(PredictorABC):
     def save_model(self,
                    index_name="index.json",
                    weight_name="weights.h5"):
-        self._vocab_index.to_json(file_name=index_name)
+        self._x_index.to_json(file_name=index_name)
         self._model.save(weight_name)
 
     def load_index(self, index_path):
-        self._vocab_index = IntIndex.from_json(index_path)
+        self._x_index = IntIndex.from_json(index_path)
 
     def load_weights(self, model_path):
         self._model = load_model(model_path)
@@ -88,17 +100,38 @@ class Kone(PredictorABC):
         self.load_index(index_path=index_path)
         self.load_weights(model_path=model_path)
 
-    def _flatten_text(self, text_list: Iterable) -> (list, list):
+    # TODO: test this works
+    def _transform_x(self, text_list: Iterable,
+                     padding_symbol='<p>') -> dict:
+        flat_x, text_lengths, matrix_list = "", [], []
+        padding = padding_symbol * self._window_size
+        pad_len = len(padding) * 2
+
+        for text in text_list:
+            flat_x += text
+            text_lengths.append(len(text))
+
+            padded_text = padding + text + padding
+            padded_as_num = [self._x_index.to_int(char) for char in padded_text]
+
+            numericized_padded = []
+            for i in range(len(text)):
+                numericized_padded += padded_as_num[i: i + pad_len]
+            matrix_list.append(numericized_padded)
+
+        matrix = np.array(matrix_list)
+        return dict(flat_x=flat_x, text_lengths=text_lengths,
+                    matrix=matrix)
+
+    def _transform_y(self, pos_list: Iterable) -> np.array:
         raise NotImplementedError
 
     def _build_model(self, embedding_dim=300, num_neurons=128):
         raise NotImplementedError
 
-    def _to_numeric_matrix(self, char_list: list) -> np.ndarray:
-        raise NotImplementedError
-
     @staticmethod
-    def _extract_nouns(predictions, text_lengths) -> list:
+    def _extract_nouns(char_list: list, predictions: np.ndarray,
+                       text_lengths: list) -> list:
         raise NotImplementedError
 
     @property
@@ -128,6 +161,7 @@ class IntIndex:
     Can be created from an iterable that holds the vocabulary items,
     or from a json file that already contains the mappings.
     """
+
     def __init__(self, vocabulary=None, json_obj=None):
         """
         Initialize the index from an iterable of vocabulary or a json file.
@@ -165,6 +199,12 @@ class IntIndex:
         for n, obj in enumerate(self._vocabulary):
             self._to_int[obj] = n
             self._from_int[n] = obj
+
+    def add_vocab(self, value) -> None:
+        assert len(self._to_int) == len(self._from_int)
+        index = len(self._to_int)
+        self._to_int[value] = index
+        self._from_int[index] = value
 
     def to_int(self, obj: str):
         """

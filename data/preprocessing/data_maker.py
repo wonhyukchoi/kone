@@ -62,11 +62,13 @@ class CorpusCleaner:
 
     def save(self, out_name="train_data.csv", dump_protocol=75000):
         num_dumps = math.ceil(len(self._data)/dump_protocol)
+        data = self._data.dropna()
+        print("Dropped {} rows".format(len(self._data) - len(data)))
         for i in range(num_dumps):
             prefix = 'iter_' + str(i) + '_'
             index = i * dump_protocol
-            self._data[index: index+dump_protocol].to_csv(prefix+out_name,
-                                                          encoding='utf-8-sig')
+            data[index: index+dump_protocol].to_csv(prefix+out_name,
+                                                    encoding='utf-8-sig')
 
     @property
     def data(self):
@@ -76,4 +78,4 @@ class CorpusCleaner:
 if __name__ == "__main__":
     corpus_cleaner = CorpusCleaner()
     corpus_cleaner.generate()
-    corpus_cleaner.save("test.csv")
+    corpus_cleaner.save("data.csv")

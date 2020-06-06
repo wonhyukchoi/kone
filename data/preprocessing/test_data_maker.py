@@ -16,7 +16,7 @@ class DataMakerTest(unittest.TestCase):
 
     def test_num_columns(self):
         data = self._data
-        self.assertTrue(len(data[self._x]) == len(data[self._y]))
+        self.assertEqual(len(data[self._x]), len(data[self._y]))
 
     def test_row_lens(self):
         data = self._data
