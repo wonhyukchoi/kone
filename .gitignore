@@ -1,8 +1,11 @@
 # Pycharm
 .idea/
 
+# lovit
+data/preprocessing/sejong_corpus_cleaner/
+data/preprocessing/sejong_corpus_cleaner_/
+
 # data
-data/preprocessing/sejong_corpus_cleaner/data/
 data/preprocessing/processed/
 *.csv
 

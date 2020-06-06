@@ -1,3 +1,0 @@
-pandas >= 0.23.4
-beautifulsoup4 >= 4.6.0
-lxml >= 3.7.0
