@@ -32,13 +32,14 @@ class PredictorABC:
 
 
 class Kone(PredictorABC):
-    def __init__(self, window_size: int):
+    def __init__(self, window_size: int, delim=','):
         super().__init__()
         self._window_size = window_size
         self._x_index = None
         self._y_index = None
         self._model = None
         self._train_history = None
+        self._delim = delim
 
     def train(self, x: Sequence, y: Sequence,
               padding_symbol='<p>',
@@ -170,12 +171,13 @@ class Kone(PredictorABC):
             pos_row = predicted_pos[text_start: text_end]
             noun_list.append(self._extract_nouns(text_row, pos_row))
 
+            text_start = text_end
+
         return noun_list
 
-    @staticmethod
-    def _extract_nouns(text: list, pos_list: list,
+    def _extract_nouns(self, text: list, pos_list: list,
                        begin='B', inside='I',
-                       other='O') -> list:
+                       other='O') -> str:
         """
         Refer to the wikipedia page for more information on IOB tagging.
         https://en.wikipedia.org/wiki/Inside%E2%80%93outside%E2%80%93beginning_(tagging)
@@ -212,7 +214,7 @@ class Kone(PredictorABC):
                     noun_string = ""
 
             elif pos_tag == inside:
-                if len(noun_string) > 1:
+                if len(noun_string) >= 1:
                     noun_string += char
 
             elif pos_tag == other:
@@ -223,11 +225,12 @@ class Kone(PredictorABC):
             else:
                 raise KeyError("Found illegitimate tag {}".format(pos_tag))
 
-            # Since last iob tag could have been the inside tag
-            if len(noun_string) >= 2:
-                nouns.append(noun_string)
+        # Since last iob tag could have been the inside tag
+        if len(noun_string) >= 2:
+            nouns.append(noun_string)
 
-        return nouns
+        nouns_as_str = self._delim.join(nouns)
+        return nouns_as_str
 
     @property
     def train_history(self):

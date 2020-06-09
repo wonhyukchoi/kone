@@ -2,6 +2,8 @@
 
 [![Travis CI](https://travis-ci.org/wonhyukchoi/kone.svg?branch=master)](https://travis-ci.org/wonhyukchoi/kone)
 
+**_현재 코드는 사용 가능하나, 아직 모델 로딩과 추가적인 학습 등 미완성 repository 입니다._**
+
 ## 개요
 
 인공신경망 레이어 2개 (Embedding 1개, dense 1개)만으로 원문에서 명사를 추출하는 모델입니다.
@@ -20,7 +22,22 @@
 
 ## 사용 방법
 
-`kone` 사용 방법은 아래와 같습니다.
+### 예시
+
+`example.py`에 학습 후 예측과, 모델 로드 후 예측 두 가지 코드를 준비 해놓았습니다.
+
+### 모듈 사용
+
+모듈로 코드에 삽입하여 쓰시고 싶다면 아래와 같이 사용하시면 됩니다.
+
+```python
+from kone.models import Kone
+kone = Kone(window_size)
+kone.load_model(x_index_path, y_index_path, model_path)
+noun_list = kone.predict(texts)
+```
+
+이 때 물론 `window_size, x_index_path, y_index_path, model_path`는 기 선언한 변수여야 합니다.
 
 
 
@@ -30,8 +47,11 @@
 
 ### 학습 데이터 생성 방법
 
-1. 국립국어원 세종 말뭉치 다운로드 뒤, `data/preprocessing/sejong_corpus_cleaner/data/raw`에 넣어주세요.
-2.  `kone/make_data.sh` 실행
-3. `data/train_data.csv` 가 등장합니다!
+1. `cd data/preprocessing` 후 `git clone https://github.com/lovit/sejong_corpus_cleaner.git`을 해주세요.
+2. 국립국어원 세종 말뭉치 다운로드 뒤, `data/preprocessing/sejong_corpus_cleaner/data/raw`에 넣어주세요.
+3. `kone/make_data.sh` 실행
+4. `data/train_data.csv` 가 등장합니다!
 
 ### 학습
+
+**_WIP_**

@@ -28,8 +28,17 @@ class KoneTest(unittest.TestCase):
         self.assertEqual(random_char, loaded_char, msg)
 
     def test_kone(self):
-        kone = Kone(window_size=0x2f)
+        kone = Kone(window_size=3)
+
         self.assertEqual(kone, kone)
+
+        kone = Kone(window_size=3)
+        data_path = os.path.join(os.path.join(
+            os.getcwd(), 'data'), 'sample.csv')
+        data = pd.read_csv(data_path)
+        x, y = data['text'], data['tag']
+        kone.train(x=x, y=y, epochs=10)
+        foo = (kone.predict(x))
 
 
 if __name__ == "__main__":
