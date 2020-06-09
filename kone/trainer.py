@@ -62,9 +62,12 @@ class KoneTrainer:
                    optimizer=optimizer, verbose=verbose)
 
         if save:
-            index_name = save_name + '_index.json'
+            x_index_name = save_name + '_x_' + 'index.json'
+            y_index_name = save_name + '_y_' + 'index.json'
             weight_name = save_name + '_weight.h5'
-            kone.save_model(index_name=index_name, weight_name=weight_name)
+            kone.save_model(x_index_name=x_index_name,
+                            y_index_name=y_index_name,
+                            weight_name=weight_name)
 
         if plot:
             kone.plot_train_history(save_name=save_name)
@@ -72,8 +75,10 @@ class KoneTrainer:
         accuracy = round(max(kone.train_history[acc_metric]) * 100, 2)
         return accuracy
 
-    def _to_x_and_y(self, data: pd.DataFrame) -> (list, list):
-        raise NotImplementedError
+    @staticmethod
+    def _to_x_and_y(data: pd.DataFrame,
+                    x_name='text', y_name='tag') -> (np.array, np.array):
+        return data[x_name].values, data[y_name].values
 
 
 if __name__ == "__main__":
@@ -89,8 +94,13 @@ if __name__ == "__main__":
         os.getcwd(), os.pardir), 'data'), 'train_data.csv')
     kone_trainer = KoneTrainer(train_data=pd.read_csv(data_path))
 
-    # TODO
-    hyperparameter_list = [{}]
+    hyperparameter_list = [{'window_size': 3,
+                            'epochs': 10,
+                            'batch_size': 16384,
+                            'embedding_dim': 64,
+                            'num_neurons': 64,
+                            'optimizer': 'rmsprop',
+                            'verbose': 2}]
 
     if mode == 'batch':
         kone_trainer.train_batch(hyperparameters=hyperparameter_list,
@@ -100,4 +110,3 @@ if __name__ == "__main__":
         kone_trainer.train(hyperparameter=hyperparameter_list[0],
                            save_name=model_save_path, plot=True, save=True)
 
-    raise NotImplementedError

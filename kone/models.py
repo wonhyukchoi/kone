@@ -42,7 +42,7 @@ class Kone(PredictorABC):
 
     def train(self, x: Sequence, y: Sequence,
               padding_symbol='<p>',
-              epochs=30, batch_size=1 << 14,
+              epochs=1, batch_size=1 << 14,
               embedding_dim=300, num_neurons=128,
               optimizer='rmsprop', verbose=1) -> None:
 
@@ -79,62 +79,74 @@ class Kone(PredictorABC):
 
         y_hat_matrix = self._model.predict(windowed_and_numericized)
         y_hat = np.argmax(y_hat_matrix, axis=1)
-        noun_list = self._extract_nouns(char_list=flat_x_chars,
-                                        predictions=y_hat,
-                                        text_lengths=text_lengths)
+        predicted_pos = [self._y_index.from_int(predicted_y) for predicted_y in y_hat]
+
+        assert len(predicted_pos) == len(flat_x_chars), f"Input and output lengths must match." \
+                                                        f"This should never happen, though."
+
+        noun_list = self._extract_nouns_batch(char_list=flat_x_chars,
+                                              predicted_pos=predicted_pos,
+                                              text_lengths=text_lengths)
 
         return noun_list
 
     def save_model(self,
-                   index_name="index.json",
+                   x_index_name="x_index.json",
+                   y_index_name="y_index.json",
                    weight_name="weights.h5"):
-        self._x_index.to_json(file_name=index_name)
+        self._x_index.to_json(file_name=x_index_name)
+        self._y_index.to_json(file_name=y_index_name)
         self._model.save(weight_name)
 
-    def load_index(self, index_path):
-        self._x_index = IntIndex.from_json(index_path)
+    def load_index(self, index_path, index_for='x'):
+        index_for = index_for.lower().strip()
+        if index_for == 'x':
+            self._x_index = IntIndex.from_json(index_path)
+        elif index_for == 'y':
+            self._y_index = IntIndex.from_json(index_path)
+        else:
+            raise KeyError("Expected index for either x or y,"
+                           "but got {}".format(index_for))
 
     def load_weights(self, model_path):
         self._model = load_model(model_path)
 
-    def load_model(self, index_path, model_path):
+    def load_model(self, x_index_path, y_index_path, model_path):
         """ Method to retain consistency with API syntax. """
-        self.load_index(index_path=index_path)
+        self.load_index(index_path=x_index_path, index_for='x')
+        self.load_index(index_path=y_index_path, index_for='y')
         self.load_weights(model_path=model_path)
 
-    # TODO: test this works
     def _transform_x(self, text_list: Iterable,
                      padding_symbol='<p>') -> dict:
         flat_x, text_lengths, matrix_list = "", [], []
-        padding = padding_symbol * self._window_size
+        padding = [self._x_index.to_int(padding_symbol)] * self._window_size
         seq_len = len(padding) * 2 + 1
 
         for text in text_list:
             flat_x += text
             text_lengths.append(len(text))
 
-            padded_text = padding + text + padding
-            padded_as_num = [self._x_index.to_int(char) for char in padded_text]
+            numericized = [self._x_index.to_int(char) for char in text]
+            padded_nums = padding + numericized + padding
 
-            numericized_padded = []
             for i in range(len(text)):
-                numericized_padded += padded_as_num[i: i + seq_len]
-            matrix_list.append(numericized_padded)
+                matrix_list.append(padded_nums[i: i + seq_len])
 
         matrix = np.array(matrix_list)
         return dict(flat_x=flat_x, text_lengths=text_lengths,
                     matrix=matrix)
 
-    # TODO: test this works
-    @staticmethod
-    def _transform_y(flat_y: str) -> np.array:
+    def _transform_y(self, flat_y: str) -> np.array:
         one_hot = OneHotEncoder()
-        return one_hot.fit_transform(list(flat_y))
+        y_array = np.array([self._y_index.to_int(char) for char in flat_y])
+        transformed_y = one_hot.fit_transform(y_array.reshape(-1, 1)).toarray()
+        return transformed_y.astype('int8')
 
     def _build_model(self, embedding_dim=64, num_neurons=64) -> None:
         seq_len = self._window_size * 2 + 1
         vocab_size = len(self._x_index.vocabulary) + 1
-        num_pos_tags = len(self._y_index)
+        num_pos_tags = len(self._y_index.vocabulary)
 
         input_layer = Input(shape=(seq_len,))
         embedding_layer = Embedding(input_dim=vocab_size,
@@ -145,12 +157,77 @@ class Kone(PredictorABC):
                             activation='relu')(flatten_layer)
         predict_layer = Dense(units=num_pos_tags,
                               activation='softmax')(dense_layer)
-        self._model = Model(input=input_layer, outputs=predict_layer)
+        self._model = Model(inputs=input_layer, outputs=predict_layer)
+
+    def _extract_nouns_batch(self,
+                             char_list: list, predicted_pos: list,
+                             text_lengths: list) -> list:
+        noun_list = []
+        text_start = 0
+        for length in text_lengths:
+            text_end = text_start + length
+            text_row = char_list[text_start: text_end]
+            pos_row = predicted_pos[text_start: text_end]
+            noun_list.append(self._extract_nouns(text_row, pos_row))
+
+        return noun_list
 
     @staticmethod
-    def _extract_nouns(char_list: list, predictions: np.ndarray,
-                       text_lengths: list) -> list:
-        raise NotImplementedError
+    def _extract_nouns(text: list, pos_list: list,
+                       begin='B', inside='I',
+                       other='O') -> list:
+        """
+        Refer to the wikipedia page for more information on IOB tagging.
+        https://en.wikipedia.org/wiki/Inside%E2%80%93outside%E2%80%93beginning_(tagging)
+        From the pos tags and original text, extracts nouns
+        that are more than just a single character long.
+
+        Parameters
+        ----------
+        text: list
+            A list of characters of the text string from which to extract nouns
+        pos_list: list
+            A list of pos tags for each character
+        begin: char
+            Symbol for the IOB 'Beginning' tag
+        inside: char
+            Symbol for the IOB 'Inside' tag
+        other: char
+            Symbol for "Other" (non-noun) tags
+
+        Returns
+        -------
+        nouns: list
+            List of noun strings extracted from the text and pos tags
+
+        """
+        nouns = []
+        noun_string = ''
+        for char, pos_tag in zip(text, pos_list):
+
+            if pos_tag == begin:
+                if len(noun_string) == 0:
+                    noun_string += char
+                else:
+                    noun_string = ""
+
+            elif pos_tag == inside:
+                if len(noun_string) > 1:
+                    noun_string += char
+
+            elif pos_tag == other:
+                if len(noun_string) >= 2:
+                    nouns.append(noun_string)
+                noun_string = ""
+
+            else:
+                raise KeyError("Found illegitimate tag {}".format(pos_tag))
+
+            # Since last iob tag could have been the inside tag
+            if len(noun_string) >= 2:
+                nouns.append(noun_string)
+
+        return nouns
 
     @property
     def train_history(self):
