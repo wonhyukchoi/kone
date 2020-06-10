@@ -134,7 +134,7 @@ class Kone(PredictorABC):
             for i in range(len(text)):
                 matrix_list.append(padded_nums[i: i + seq_len])
 
-        matrix = np.array(matrix_list)
+        matrix = np.array(matrix_list, dtype='int16')
         return dict(flat_x=flat_x, text_lengths=text_lengths,
                     matrix=matrix)
 
@@ -239,8 +239,8 @@ class Kone(PredictorABC):
     def plot_train_history(self, save_name: str):
         for metric in ('loss', 'categorical_accuracy'):
             val_metric = 'val_' + metric
-            plt.plot(self._train_history[metric], label=metric)
-            plt.plot(self._train_history[val_metric], label=val_metric)
+            plt.plot(self._train_history.history[metric], label=metric)
+            plt.plot(self._train_history.history[val_metric], label=val_metric)
 
             if 'accuracy' in metric:
                 metric = 'accuracy'
