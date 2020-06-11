@@ -1,5 +1,12 @@
 import unittest
-from data_maker import CorpusCleaner
+from .data_maker import CorpusCleaner
+
+"""
+Run this test ONLY after you have
+cloned sejong_corpus_cleaner and have downloaded the data 
+from 국립국어원 database!
+Otherwise, it will err.
+"""
 
 
 class DataMakerTest(unittest.TestCase):
@@ -25,4 +32,6 @@ class DataMakerTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    import os
+    if 'sejong_corpus_cleaner' in os.listdir(os.getcwd()):
+        unittest.main()

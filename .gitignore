@@ -3,7 +3,7 @@
 
 # lovit
 data/preprocessing/sejong_corpus_cleaner/
-data/preprocessing/sejong_corpus_cleaner_/
+data/preprocessing/sejong_corpus_cleaner/
 
 # data
 data/preprocessing/processed/
@@ -11,10 +11,7 @@ data/preprocessing/processed/
 
 # local training
 trainer.py
-_trainer.py
 train_results/
-_train_results/
-
 
 # log files
 *.log

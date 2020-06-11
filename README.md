@@ -1,4 +1,4 @@
-# KOrean Noun Extractor
+# Korean Open Noun Extractor
 
 [![Travis CI](https://travis-ci.org/wonhyukchoi/kone.svg?branch=master)](https://travis-ci.org/wonhyukchoi/kone)
 
@@ -11,7 +11,7 @@
 
 | 뉴스 | '테니스 황제' 로저 페더러(39· 스위스· 4위)가 무릎 부상으로 수술대에 올랐다. |
 |-|---|
-| **명사** | 테니스, 황제, 로저, 페더러, 스위스, 무릎, 부상, 수술대 |
+| **명사** | **테니스, 황제, 로저, 페더러, 스위스, 무릎, 부상, 수술대** |
 
 | dcinside | 기호를 괴상하게 많이 써서 다른 언어 프로그래머들이 피똥 싼다. |
 |-|---|
@@ -19,9 +19,9 @@
 
 | 네이버 카페 | 저는 쇼팽을 좋아합니다. 실력은 안 되면서도 이미 수많은 에튀드들을 쳤습니다. |
 |-|---|
-| **명사** | 쇼팽, 실력, 에튀드 |
+| **명사** | **쇼팽, 실력, 에튀드** |
 
-[설명은 됐고, 어떻게 쓰는건데?](https://github.com/wonhyukchoi/kone#모듈%20사용)
+[설명은 됐고, 어떻게 쓰는건데?](https://github.com/wonhyukchoi/kone#모듈-사용)
 
 ### 모델 아키텍처
 
@@ -31,7 +31,7 @@
 
 학습 데이터는 [국립국어원 세종 말뭉치](https://ithub.korean.go.kr/user/guide/corpus/guide1.do)로, 10만개 어절이 넘는 방대한 양의 데이터를 기반으로 학습하였습니다.
 
-이 세종 코퍼스는 XML 형태로 되어있고, 여러 가지 오류도 많은데, [김현중님의 오픈 소스 코드](https://github.com/lovit/sejong_corpus_cleaner) 를 참조하여 전처리 작업을 합니다.
+이 세종 코퍼스는 XML 형태로 되어있고, 여러 가지 오류도 많은데, [김현중님의 오픈 소스 코드](https://github.com/lovit/sejong_corpus_cleaner)를 참조하여 전처리 작업을 합니다.
 
 
 
@@ -91,7 +91,7 @@ kone.save_model(X_INDEX_PATH, Y_INDEX_PATH, MODEL_WEIGHT_PATH)
 
 이때 `X_INDEX` 와 `Y_INDEX`는 `.json`으로 저장해야 되며, `MODEL_WEIGHT`는 `.h5`로 저장해야 됩니다.
 
-이후에 모델이 저장되었으면 위 [모듈 사용](https://github.com/wonhyukchoi/kone#모듈%20사용)에서처럼 모델을 로드하여 사용하시면 됩니다.
+이후에 모델이 저장되었으면 위 [모듈 사용](https://github.com/wonhyukchoi/kone#모듈-사용)에서처럼 모델을 로드하여 사용하시면 됩니다.
 
 
 
@@ -136,5 +136,5 @@ Small 모델 학습에 사용된 hyperparameter는 아래와 같습니다.
 * num neurons = 32
 * optimizer = rmsprop
 
-이 모델의 정확도는 **97.8%**로 large 모델보다 정확도가 다소 떨어지지만, 대신 모델의 크기는 1/20 규모입니다. 
+이 모델의 정확도는  **97.8%** 로 large 모델보다 정확도가 다소 떨어지지만, 대신 모델의 크기는 1/20 규모입니다. 
 
