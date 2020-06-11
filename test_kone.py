@@ -10,7 +10,7 @@ class KoneTest(unittest.TestCase):
     def setUp(self):
         kone = Kone(window_size=3)
         data_path = os.path.join(os.path.join(
-            os.getcwd(), 'data'), 'train_data.csv')
+            os.getcwd(), 'data'), 'sample.csv')
         data = pd.read_csv(data_path).sample(1000)
         x, y = data['text'], data['tag']
         kone.train(x=x, y=y, epochs=10)
