@@ -12,6 +12,7 @@ data_path = os.path.join(os.path.join(
 data = pd.read_csv(data_path)
 x, y = data['text'], data['tag']
 
+
 def train_and_predict():
     kone = Kone(window_size=3)
     kone.train(x=x, y=y, epochs=10)

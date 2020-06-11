@@ -2,22 +2,23 @@ import os
 from kone.models import Kone
 
 
-KONE_WINDOW_SIZE = 3
+KONE_WINDOW_SIZE = 4
 MODEL_DIR = os.path.join(os.getcwd(), 'models')
-X_PATH = os.path.join(MODEL_DIR, 'x_index.json')
-Y_PATH = os.path.join(MODEL_DIR, 'y_index.json')
-MODEL_PATH = os.path.join(MODEL_DIR, 'model_weights.h5')
+X_PATH = os.path.join(MODEL_DIR, 'large_x_index.json')
+Y_PATH = os.path.join(MODEL_DIR, 'large_y_index.json')
+MODEL_PATH = os.path.join(MODEL_DIR, 'large_weights.h5')
 
 SAMPLE_TEXTS = [
-    "행복한 즐거운 세상입니다!",
-    "오토바이 타고 가자"
+    "'테니스 황제' 로저 페더러(39· 스위스· 4위)가 무릎 부상으로 수술대에 올랐다.",
+    "기호를 괴상하게 많이 써서 다른 언어 프로그래머들이 피똥 싼다.",
+    "저는 쇼팽을 좋아합니다. 실력은 안 되면서도 이미 수많은 에튀드들을 쳤습니다."
 ]
 
 
 def print_result(text_list, noun_list):
     for text, nouns in zip(text_list, noun_list):
-        print(f"Text:{text}\n"
-              f"Nouns:{nouns}",
+        print(f"원문:{text}\n"
+              f"명사:{nouns}",
               end='\n\n')
 
 

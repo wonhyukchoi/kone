@@ -6,9 +6,20 @@
 
 인공신경망 레이어 2개 (Embedding 1개, dense 1개)만으로 원문에서 명사를 추출하는 모델입니다.
 
-이 단순한 모델만으로 명사 [IOB 태깅](https://arxiv.org/abs/cs/9907006) 정확도가 무려 **99.1%** 나오며,  이를 바탕으로 어떠한 원문에서던지 명사를 추출할 수 있습니다.
+이 단순한 모델만으로 명사 [IOB 태깅](https://arxiv.org/abs/cs/9907006) 정확도가 무려 **98.9%** 나오며,  이를 바탕으로 어떠한 원문에서던지 명사를 추출할 수 있습니다.
 
-상당히 가벼운 모델이기 때문에 학습하는데 8 Gb 램, Nvidia GeForce 940M GPU 하나만 사용하더라도 학습 시간이 1시간만 소요됩니다.
+
+| 뉴스 | '테니스 황제' 로저 페더러(39· 스위스· 4위)가 무릎 부상으로 수술대에 올랐다. |
+|-|---|
+| **명사** | 테니스, 황제, 로저, 페더러, 스위스, 무릎, 부상, 수술대 |
+
+| dcinside | 기호를 괴상하게 많이 써서 다른 언어 프로그래머들이 피똥 싼다. |
+|-|---|
+| **명사** | **기호, 언어, 프로그래머, 피똥** |
+
+| 네이버 카페 | 저는 쇼팽을 좋아합니다. 실력은 안 되면서도 이미 수많은 에튀드들을 쳤습니다. |
+|-|---|
+| **명사** | 쇼팽, 실력, 에튀드 |
 
 [설명은 됐고, 어떻게 쓰는건데?](https://github.com/wonhyukchoi/kone#모듈%20사용)
 
@@ -88,14 +99,42 @@ kone.save_model(X_INDEX_PATH, Y_INDEX_PATH, MODEL_WEIGHT_PATH)
 
 이 repository에는 기 학습된 모델이 `models/`에 들어있습니다.
 
-학습에 사용된 hyperparameter는 아래와 같습니다.
+### Large 모델
+
+Large 모델은 정확도를 위해 맞춘 모델로서, `weight` 는 21.4 Mb이고 정확도는 **98.9%** 입니다.
+
+
+Large 모델 학습에 사용된 hyperparameter는 아래와 같습니다.
 
 * numpy random seed = 47
-* window size = 3
-* epochs = 10
+* window size = 4
+* epochs = 9
 * batch size = 16384 
 * embedding dim = 300
 * num neurons = 100
 * optimizer = rmsprop
 
-이 hyperparameter로 생성된 모델의 validation accuracy는 **99.1%** 입니다. 
+이 hyperparameter로 생성된 모델의 정확도는 **98.9%** 입니다. (`sklearn`의 `train_test_split`로 생성된 dev test 기준)
+
+Dense layer의 크기와 숫자를 늘리면 99.0% 까지 올릴 수 있으나, 얻는 정확도에 비해 모델 크기가 너무 크기 때문에 따로 탑재하지 않았습니다.
+
+
+
+### Small 모델
+
+Small 모델은 모델 크기에 중점을 두어서, 총 용량이 2Mb를 초과하지 않는 모델입니다.
+
+
+
+Small 모델 학습에 사용된 hyperparameter는 아래와 같습니다.
+
+* numpy random seed = 47
+* window size = 3
+* epochs = 15
+* batch size  = 16384
+* embedding dim = 32
+* num neurons = 32
+* optimizer = rmsprop
+
+이 모델의 정확도는 **97.8%**로 large 모델보다 정확도가 다소 떨어지지만, 대신 모델의 크기는 1/20 규모입니다. 
+
