@@ -16,6 +16,9 @@ train_results/
 # log files
 *.log
 
+# image making
+*.pptx
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

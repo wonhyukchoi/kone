@@ -1,4 +1,4 @@
-# Korean Open Noun Extractor
+# KONE: Korean Open Noun Extractor
 
 [![Travis CI](https://travis-ci.org/wonhyukchoi/kone.svg?branch=master)](https://travis-ci.org/wonhyukchoi/kone)
 
@@ -9,31 +9,37 @@
 이 단순한 모델만으로 명사 [IOB 태깅](https://arxiv.org/abs/cs/9907006) 정확도가 무려 **98.9%** 나오며,  이를 바탕으로 어떠한 원문에서던지 명사를 추출할 수 있습니다.
 
 
-| 뉴스 | '테니스 황제' 로저 페더러(39· 스위스· 4위)가 무릎 부상으로 수술대에 올랐다. |
+| <span style="font-weight:normal">  뉴스  </span>|<span style="font-weight:normal">  '테니스 황제' 로저 페더러(39· 스위스· 4위)가 무릎 부상으로 수술대에 올랐다.  </span>|
 |-|---|
 | **명사** | **테니스, 황제, 로저, 페더러, 스위스, 무릎, 부상, 수술대** |
 
-| dcinside | 기호를 괴상하게 많이 써서 다른 언어 프로그래머들이 피똥 싼다. |
+| <span style="font-weight:normal">디시인사이드</span> | <span style="font-weight:normal">기호를 괴상하게 많이 써서 다른 언어 프로그래머들이 피똥 싼다.</span> |
 |-|---|
-| **명사** | **기호, 언어, 프로그래머, 피똥** |
+|**명사**  | **기호, 언어, 프로그래머, 피똥** |
 
-| 네이버 카페 | 저는 쇼팽을 좋아합니다. 실력은 안 되면서도 이미 수많은 에튀드들을 쳤습니다. |
+| <span style="font-weight:normal">네이버 카페 </span>| <span style="font-weight:normal">저는 쇼팽을 좋아합니다. 실력은 안 되면서도 이미 수많은 에튀드들을 쳤습니다. </span>|
 |-|---|
 | **명사** | **쇼팽, 실력, 에튀드** |
 
-[설명은 됐고, 어떻게 쓰는건데?](https://github.com/wonhyukchoi/kone#모듈-사용)
+Large모델조차도 모델 크기가 20Mb밖에 되지 않는, 작지만 강력한 모델입니다.
+
+[사용법으로 바로가기](https://github.com/wonhyukchoi/kone#모듈-사용)
 
 ### 모델 아키텍처
 
 모델은 단순히 Embedding layer 1개, Dense layer 1개만으로 구성되어 있습니다.
+
+원문에서 글자를 window size 기준으로 선택하여, embedding 벡터화 한 뒤 flatten 하여 dense layer만 거치면 softmax output layer를 통하여서 해당 글자의 IOB 품사를 예측합니다.
+
+아래 그림은 window size 2, embedding layer 3, neuron 10개 으로 "세"라는 글자의 품사를 예측하는 예시입니다.
+
+![](.github/img/model.jpg)
 
 ### 학습 데이터
 
 학습 데이터는 [국립국어원 세종 말뭉치](https://ithub.korean.go.kr/user/guide/corpus/guide1.do)로, 10만개 어절이 넘는 방대한 양의 데이터를 기반으로 학습하였습니다.
 
 이 세종 코퍼스는 XML 형태로 되어있고, 여러 가지 오류도 많은데, [김현중님의 오픈 소스 코드](https://github.com/lovit/sejong_corpus_cleaner)를 참조하여 전처리 작업을 합니다.
-
-
 
 ## 사용 방법
 
@@ -122,7 +128,7 @@ Dense layer의 크기와 숫자를 늘리면 99.0% 까지 올릴 수 있으나, 
 
 ### Small 모델
 
-Small 모델은 모델 크기에 중점을 두어서, 총 용량이 2Mb를 초과하지 않는 모델입니다.
+Small 모델은 모델 크기에 중점을 두어서, 총 용량이 **2Mb**를 초과하지 않는 모델입니다.
 
 
 
@@ -138,3 +144,4 @@ Small 모델 학습에 사용된 hyperparameter는 아래와 같습니다.
 
 이 모델의 정확도는  **97.8%** 로 large 모델보다 정확도가 다소 떨어지지만, 대신 모델의 크기는 1/20 규모입니다. 
 
+Google Colab에서 제공하는 Tesla K80 GPU 사용 시, epoch 당 학습 소요시간은 30초밖에 걸리지 않습니다.
